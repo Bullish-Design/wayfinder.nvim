@@ -729,7 +729,7 @@ function M.render(session)
   if hints_visible() and state.ui.bottom_buf and vim.api.nvim_buf_is_valid(state.ui.bottom_buf) then
     local bottom_lines = {
       " <CR> jump  e explore  b/f history  j/k move  h/l facets  <Tab>/<S-Tab> cycle  gg/G ends  <C-u>/<C-d> page ",
-      " p pin row  a/A add target/path  P trail  S menu  [] saved  ? hints  x qf  dd remove  da clear  D details  / filter  q close ",
+      " p pin row  a/A add target/path  P trail  S menu  N new  [] saved  ? hints  x qf  dd remove  da clear  D details  / filter  q close ",
     }
     local bottom_width = state.ui.bottom
         and vim.api.nvim_win_is_valid(state.ui.bottom)
@@ -755,7 +755,7 @@ function M.render(session)
       state.ui.bottom_buf,
       1,
       bottom_lines[2],
-      { "p", "a/A", "P", "S", "[", "]", "?", "x", "dd", "da", "D", "/", "q" },
+      { "p", "a/A", "P", "S", "N", "[", "]", "?", "x", "dd", "da", "D", "/", "q" },
       "WayfinderHeader",
       200
     )

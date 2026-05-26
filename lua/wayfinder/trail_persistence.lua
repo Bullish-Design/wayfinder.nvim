@@ -130,6 +130,27 @@ function M.cycle(delta, opts)
   return M.load(names[target_index], opts)
 end
 
+function M.new(opts)
+  opts = opts or {}
+
+  local meta = state.trail_persistence_state()
+  local has_items = #trail.items() > 0
+
+  if meta.active_name and meta.dirty then
+    local saved, err = M.save_current(nil, opts)
+    if not saved then
+      return nil, err
+    end
+  elseif not meta.active_name and has_items and opts.discard_unsaved ~= true then
+    return nil, "unsaved_trail"
+  end
+
+  trail.clear({ dirty = false })
+  state.detach_trail({ dirty = false })
+
+  return true
+end
+
 function M.save_current(name, opts)
   opts = opts or {}
   local project_root = resolve_project_root(opts)

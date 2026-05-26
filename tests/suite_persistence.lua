@@ -702,3 +702,88 @@ test("trail persistence rename updates saved and active trail names", function()
   }))
   assert_ok(vim.deep_equal(names, { "auth bug v2" }), "expected renamed saved Trail list")
 end)
+
+test("trail persistence new autosaves named dirty Trails before clearing", function()
+  local state_root = vim.fs.normalize(vim.fn.tempname())
+  local project_root = git_fixture_root
+
+  trail.clear({ dirty = false })
+  state.reset_trail_persistence()
+  assert_ok(
+    trail.pin({
+      id = "trail-a",
+      label = "trail a",
+      path = project_root .. "/src/user_service.ts",
+      lnum = 1,
+      col = 1,
+    }),
+    "pin trail a"
+  )
+  assert(trail_persistence.save_current("alpha", { project_root = project_root, state_root = state_root }))
+  assert_ok(
+    trail.pin({
+      id = "trail-b",
+      label = "trail b",
+      path = project_root .. "/tests/user_service_test.ts",
+      lnum = 1,
+      col = 1,
+    }),
+    "pin trail b"
+  )
+
+  local ok = assert(trail_persistence.new({ project_root = project_root, state_root = state_root }))
+  assert_ok(ok == true, "expected new Trail success")
+  assert_ok(#trail.items() == 0, "expected working Trail to clear")
+  assert_ok(state.trail_persistence.active_name == nil, "expected detached Trail")
+  local saved = assert(trail_store.get(project_root, "alpha", { state_root = state_root }))
+  assert_ok(#saved.items == 2, "expected dirty attached Trail to auto-save before clear")
+end)
+
+test("trail persistence new clears named clean Trails without extra save", function()
+  local state_root = vim.fs.normalize(vim.fn.tempname())
+  local project_root = git_fixture_root
+
+  trail.clear({ dirty = false })
+  state.reset_trail_persistence()
+  assert_ok(
+    trail.pin({
+      id = "trail-a",
+      label = "trail a",
+      path = project_root .. "/src/user_service.ts",
+      lnum = 1,
+      col = 1,
+    }),
+    "pin trail a"
+  )
+  assert(trail_persistence.save_current("alpha", { project_root = project_root, state_root = state_root }))
+
+  local ok = assert(trail_persistence.new({ project_root = project_root, state_root = state_root }))
+  assert_ok(ok == true, "expected new Trail success")
+  local saved = assert(trail_store.get(project_root, "alpha", { state_root = state_root }))
+  assert_ok(#saved.items == 1, "expected clean attached Trail to remain unchanged")
+end)
+
+test("trail persistence new refuses detached unsaved non-empty Trails unless discarded", function()
+  local project_root = git_fixture_root
+  trail.clear({ dirty = false })
+  state.reset_trail_persistence()
+  assert_ok(
+    trail.pin({
+      id = "trail-a",
+      label = "trail a",
+      path = project_root .. "/src/user_service.ts",
+      lnum = 1,
+      col = 1,
+    }),
+    "pin trail a"
+  )
+
+  local ok, err = trail_persistence.new({ project_root = project_root })
+  assert_ok(ok == nil, "expected safe new refusal")
+  assert_ok(err == "unsaved_trail", "expected unsaved detached error")
+  assert_ok(#trail.items() == 1, "expected unsaved working Trail to remain")
+
+  local discarded = assert(trail_persistence.new({ project_root = project_root, discard_unsaved = true }))
+  assert_ok(discarded == true, "expected discard override")
+  assert_ok(#trail.items() == 0, "expected clear after discard override")
+end)

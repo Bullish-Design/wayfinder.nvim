@@ -246,6 +246,9 @@ local function persistence_error_message(err, name)
   if err == "no_last_active" then
     return "Wayfinder: No recent saved Trail"
   end
+  if err == "unsaved_trail" then
+    return "Wayfinder: Current Trail is unsaved"
+  end
   return "Wayfinder: Trail persistence failed"
 end
 
@@ -687,6 +690,75 @@ function M.clear_trail()
   end
 end
 
+function M.trail_new(opts)
+  opts = opts or {}
+  local finish = opts.on_done or function() end
+
+  local ok, err = trail_persistence.new()
+  if ok then
+    rerender_trail_state({
+      reset_selection = current() and current().facet == "trail",
+    })
+    persistence_notice("Started new Trail")
+    finish()
+    return
+  end
+
+  if err ~= "unsaved_trail" then
+    persistence_warn(err)
+    finish()
+    return
+  end
+
+  maybe_suspend_ui(opts, function(done)
+    vim.ui.select({
+      "Save As",
+      "Discard",
+      "Cancel",
+    }, {
+      prompt = "Current Trail is unsaved. Save before starting a new Trail?",
+    }, function(choice)
+      if choice == "Save As" then
+        M.trail_save_as({
+          suspend = false,
+          on_done = function()
+            local retried, retry_err = trail_persistence.new()
+            if not retried then
+              persistence_warn(retry_err)
+              done()
+              finish()
+              return
+            end
+            rerender_trail_state({
+              reset_selection = current() and current().facet == "trail",
+            })
+            persistence_notice("Started new Trail")
+            done()
+            finish()
+          end,
+        })
+      elseif choice == "Discard" then
+        local discarded, discard_err = trail_persistence.new({ discard_unsaved = true })
+        if not discarded then
+          persistence_warn(discard_err)
+          done()
+          finish()
+          return
+        end
+        rerender_trail_state({
+          reset_selection = current() and current().facet == "trail",
+        })
+        persistence_notice("Started new Trail")
+        done()
+        finish()
+      else
+        done()
+        finish()
+      end
+    end)
+  end)
+end
+
 function M.trail_save(opts)
   opts = opts or {}
   local finish = opts.on_done or function() end
@@ -894,6 +966,7 @@ end
 function M.trail_menu()
   with_suspended_ui(function(done)
     vim.ui.select({
+      "New Trail",
       "Save Trail",
       "Save Trail As",
       "Resume Last Trail",
@@ -903,7 +976,9 @@ function M.trail_menu()
     }, {
       prompt = "Wayfinder Trail menu",
     }, function(choice)
-      if choice == "Save Trail" then
+      if choice == "New Trail" then
+        M.trail_new({ on_done = done })
+      elseif choice == "Save Trail" then
         M.trail_save({ suspend = false, on_done = done })
       elseif choice == "Save Trail As" then
         M.trail_save_as({ suspend = false, on_done = done })
