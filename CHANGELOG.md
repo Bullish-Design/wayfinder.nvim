@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.3.0 - 2026-05-26
+
+Adds a public hook API for Trail lifecycle observation and stable Trail IDs for external indexing integrations.
+
+- Added hook modules: `wayfinder.hooks`, `wayfinder.hook_events`, and `wayfinder.trail_context`.
+- Added generic and event-specific hook registration (`on`, `once`, `off`, plus `on_trail_save` style helpers).
+- Emitted Trail lifecycle hooks for pin/remove/clear/replace/save/load/resume/delete/rename/open/next/prev.
+- Added stable saved Trail identifiers (`id` / `trail_id`) and preserved IDs through rename operations.
+- Added public programmatic APIs: `trail_snapshot`, `trail_save_named`, `trail_load_named`, `trail_delete_named`, `trail_rename_named`, `trail_active_name`, and `trail_project_root`.
+
+---
+
 ## v0.2.9 - 2026-05-15
 
 Empty, loading, and unavailable states now explain themselves inside the picker.
