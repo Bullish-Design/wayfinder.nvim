@@ -6,3 +6,5 @@
 /.DS_Store
 /.media-work
 __pycache__/
+.scratch/* 
+.nvimlog

@@ -473,6 +473,7 @@ local function keymaps()
       map("A", actions.pin_explore_path)
       map("P", actions.open_trail)
       map("S", actions.trail_menu)
+      map("N", actions.trail_new)
       map("[", actions.prev_saved_trail)
       map("]", actions.next_saved_trail)
       map("x", actions.export_quickfix)
@@ -815,6 +816,10 @@ end
 
 function M.trail_save()
   actions.trail_save()
+end
+
+function M.trail_new()
+  actions.trail_new()
 end
 
 function M.trail_save_as()

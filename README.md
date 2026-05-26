@@ -78,6 +78,7 @@ If there is no symbol under the cursor, Wayfinder falls back to the current file
 6. Use `a` to add the current target to Trail, or `A` to add the whole explore path.
 7. Pin selected rows with `p`.
 8. Save, load, or resume a Trail if you want to keep that path.
+9. Use `N` or `:WayfinderTrailNew` to start a fresh Trail safely.
 
 ## Default Keys
 
@@ -96,6 +97,7 @@ If there is no symbol under the cursor, Wayfinder falls back to the current file
 | `A` | Add current explore path to Trail |
 | `P` | Open Trail |
 | `S` | Open Trail menu |
+| `N` | Start a new Trail |
 | `[` / `]` | Previous / next saved Trail |
 | `s` / `v` / `t` | Open in split / vsplit / tab |
 | `/` / `<C-l>` | Filter / clear filter |
@@ -113,8 +115,11 @@ Trail is the breadcrumb list you build while exploring.
 - `p` pins the selected row.
 - `a` pins the current Wayfinder target.
 - `A` pins the current explore path.
+- `N` starts a new Trail.
 - Trail groups explicit explore targets separately from selected row pins.
 - `S` opens save, resume, load, rename, and delete actions.
+- New Trail clears the working Trail and detaches it from any active saved Trail.
+- New Trail does not delete saved Trails from disk.
 - Saved Trails are project-scoped and stored under Neovim state, not in your repo.
 
 Normal `:Wayfinder` opens do not auto-load saved Trails. Use `:WayfinderTrailResume` or the Trail menu when you want to restore the last active saved Trail.
@@ -178,6 +183,7 @@ Trail commands:
 - `:WayfinderTrailPrev`
 - `:WayfinderTrailOpen`
 - `:WayfinderTrailShow`
+- `:WayfinderTrailNew`
 - `:WayfinderTrailSave`
 - `:WayfinderTrailSaveAs`
 - `:WayfinderTrailLoad`

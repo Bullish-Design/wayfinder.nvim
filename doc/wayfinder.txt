@@ -78,6 +78,11 @@ explore, pin, or export as code locations.
 :WayfinderTrailShow
                 Open Wayfinder on the Trail facet.
 
+                                               *:WayfinderTrailNew*
+:WayfinderTrailNew
+                Start a new Trail safely. Dirty named Trails auto-save first.
+                Detached unsaved Trails prompt in the UI flow.
+
                                                *:WayfinderTrailSave*
 :WayfinderTrailSave
                 Save the current working Trail.
@@ -154,6 +159,7 @@ Example mappings:
   p          Pin selected row into Trail
   P          Open Trail
   S          Open Trail menu
+  N          Start a new Trail
   [          Previous saved Trail
   ]          Next saved Trail
   x          Export current facet to quickfix
@@ -196,6 +202,9 @@ Trail commands work outside the Wayfinder UI.
 
   :WayfinderTrailShow
       Open Wayfinder on the Trail facet.
+
+  :WayfinderTrailNew
+      Start a new Trail safely without deleting saved Trails.
 
   :WayfinderTrailSave
       Save the current working Trail.
