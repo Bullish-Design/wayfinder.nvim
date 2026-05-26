@@ -1,4 +1,7 @@
 local state = require("wayfinder.state")
+local hooks = require("wayfinder.hooks")
+local hook_events = require("wayfinder.hook_events")
+local trail_context = require("wayfinder.trail_context")
 
 local M = {}
 
@@ -70,6 +73,10 @@ function M.pin(item)
   table.insert(state.trail, pinned)
   set_cursor(#state.trail)
   mark_dirty()
+  hooks.emit_trail_pin(trail_context.current({
+    event = hook_events.TRAIL_PIN,
+    item = pinned,
+  }))
   return true
 end
 
@@ -85,14 +92,23 @@ function M.replace(items, opts)
 
   set_cursor(opts.cursor or 1)
   mark_dirty(opts)
+  hooks.emit_trail_replace(trail_context.current({
+    event = hook_events.TRAIL_REPLACE,
+    items = state.trail,
+  }))
 end
 
 function M.remove(item_id)
   for index, item in ipairs(state.trail) do
     if item.id == item_id then
+      local removed = state.trail[index]
       table.remove(state.trail, index)
       state.trail_cursor = math.min(state.trail_cursor, math.max(#state.trail, 1))
       mark_dirty()
+      hooks.emit_trail_remove(trail_context.current({
+        event = hook_events.TRAIL_REMOVE,
+        item = removed,
+      }))
       return true
     end
   end
@@ -103,6 +119,10 @@ function M.clear(opts)
   state.trail = {}
   state.trail_cursor = 1
   mark_dirty(opts)
+  hooks.emit_trail_clear(trail_context.current({
+    event = hook_events.TRAIL_CLEAR,
+    items = {},
+  }))
 end
 
 function M.cursor()

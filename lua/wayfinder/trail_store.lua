@@ -3,6 +3,28 @@ local paths = require("wayfinder.util.paths")
 local M = {}
 local project_cache = {}
 
+local function make_trail_id(project_root, name)
+  local entropy = table.concat({
+    project_root or "",
+    name or "",
+    tostring(os.time()),
+    tostring(vim.uv.hrtime()),
+    tostring(math.random()),
+  }, "|")
+
+  return "wf_" .. vim.fn.sha256(entropy):sub(1, 24)
+end
+
+local function ensure_trail_id(project_root, name, entry, existing)
+  entry = entry or {}
+  existing = existing or {}
+
+  entry.id = entry.id or existing.id or existing.trail_id or make_trail_id(project_root, name)
+  entry.trail_id = entry.trail_id or existing.trail_id or entry.id
+
+  return entry
+end
+
 local function normalize_project_root(project_root)
   return paths.normalize(project_root)
 end
@@ -105,6 +127,8 @@ local function normalize_trail_entry(name, entry)
   end
 
   return {
+    id = entry.id or entry.trail_id,
+    trail_id = entry.trail_id or entry.id,
     name = name,
     items = type(entry.items) == "table" and vim.tbl_map(M.normalize_item, entry.items) or {},
     created_at = entry.created_at,
@@ -296,9 +320,13 @@ function M.set(project_root, trail_data, opts)
   end
 
   local name = vim.trim(trail_data.name)
-  local existing = data.trails[name]
-  local entry = normalize_trail_entry(name, trail_data) or { name = name, items = {} }
-  entry.created_at = trail_data.created_at or (existing and existing.created_at) or os.time()
+  local existing = data.trails[name] or {}
+  local entry = vim.tbl_deep_extend("force", existing, normalize_trail_entry(name, trail_data) or {
+    name = name,
+    items = {},
+  })
+  entry = ensure_trail_id(root, name, entry, existing)
+  entry.created_at = trail_data.created_at or existing.created_at or os.time()
   entry.updated_at = trail_data.updated_at or os.time()
   data.trails[name] = entry
   data.last_active = name
@@ -361,8 +389,10 @@ function M.rename(project_root, old_name, new_name, opts)
     return nil, "name_exists"
   end
 
+  entry = ensure_trail_id(project_root, old_name, entry, entry)
   data.trails[old_name] = nil
   entry.name = new_name
+  entry.updated_at = os.time()
   data.trails[new_name] = entry
 
   if data.last_active == old_name then
