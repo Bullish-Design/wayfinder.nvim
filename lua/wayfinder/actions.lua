@@ -2,6 +2,9 @@ local layout = require("wayfinder.layout")
 local quickfix = require("wayfinder.util.quickfix")
 local state = require("wayfinder.state")
 local trail = require("wayfinder.trail")
+local hooks = require("wayfinder.hooks")
+local hook_events = require("wayfinder.hook_events")
+local trail_context = require("wayfinder.trail_context")
 local trail_persistence = require("wayfinder.trail_persistence")
 local open = require("wayfinder.util.open")
 local facets = require("wayfinder.render.facets")
@@ -1042,6 +1045,10 @@ function M.trail_open()
   end
 
   open.item(item, "edit")
+  hooks.emit_trail_open(trail_context.current({
+    event = hook_events.TRAIL_OPEN,
+    item = item,
+  }))
 end
 
 function M.trail_next()
@@ -1056,6 +1063,10 @@ function M.trail_next()
   end
 
   open.item(item, "edit")
+  hooks.emit_trail_next(trail_context.current({
+    event = hook_events.TRAIL_NEXT,
+    item = item,
+  }))
 end
 
 function M.trail_prev()
@@ -1070,6 +1081,10 @@ function M.trail_prev()
   end
 
   open.item(item, "edit")
+  hooks.emit_trail_prev(trail_context.current({
+    event = hook_events.TRAIL_PREV,
+    item = item,
+  }))
 end
 
 function M.filter()

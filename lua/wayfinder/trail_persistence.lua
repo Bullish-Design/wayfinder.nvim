@@ -2,6 +2,9 @@ local state = require("wayfinder.state")
 local trail = require("wayfinder.trail")
 local trail_store = require("wayfinder.trail_store")
 local paths = require("wayfinder.util.paths")
+local hooks = require("wayfinder.hooks")
+local hook_events = require("wayfinder.hook_events")
+local trail_context = require("wayfinder.trail_context")
 
 local M = {}
 
@@ -180,7 +183,15 @@ function M.save_current(name, opts)
     project_root = project_root,
     dirty = false,
   })
-  return vim.deepcopy(data.trails[target_name])
+  local saved = vim.deepcopy(data.trails[target_name])
+  hooks.emit_trail_save(trail_context.current({
+    event = hook_events.TRAIL_SAVE,
+    project_root = project_root,
+    name = target_name,
+    trail_id = saved and (saved.id or saved.trail_id) or nil,
+    items = saved and saved.items or found,
+  }))
+  return saved
 end
 
 function M.save_current_as(name, opts)
@@ -235,6 +246,13 @@ function M.load(name, opts)
     project_root = project_root,
     dirty = false,
   })
+  hooks.emit_trail_load(trail_context.current({
+    event = hook_events.TRAIL_LOAD,
+    project_root = project_root,
+    name = target_name,
+    trail_id = activated and (activated.id or activated.trail_id) or nil,
+    items = activated and activated.items or {},
+  }))
   return activated
 end
 
@@ -253,7 +271,18 @@ function M.resume(opts)
     return nil, "no_last_active"
   end
 
-  return M.load(name, opts)
+  local loaded, load_err = M.load(name, opts)
+  if not loaded then
+    return nil, load_err
+  end
+  hooks.emit_trail_resume(trail_context.current({
+    event = hook_events.TRAIL_RESUME,
+    project_root = project_root,
+    name = loaded.name,
+    trail_id = loaded.id or loaded.trail_id,
+    items = loaded.items or {},
+  }))
+  return loaded
 end
 
 function M.delete(name, opts)
@@ -267,6 +296,7 @@ function M.delete(name, opts)
     return nil, "missing_name"
   end
 
+  local existing = trail_store.get(project_root, target_name, opts)
   local updated, removed = trail_store.delete(project_root, target_name, opts)
   if not updated then
     return nil, removed
@@ -274,6 +304,15 @@ function M.delete(name, opts)
 
   if removed and attached_name_for(project_root) == target_name then
     state.detach_trail({ dirty = #trail.items() > 0 })
+  end
+  if removed then
+    hooks.emit_trail_delete(trail_context.current({
+      event = hook_events.TRAIL_DELETE,
+      project_root = project_root,
+      name = target_name,
+      trail_id = existing and (existing.id or existing.trail_id) or nil,
+      items = existing and existing.items or {},
+    }))
   end
 
   return updated, removed
@@ -304,8 +343,17 @@ function M.rename(old_name, new_name, opts)
       dirty = state.trail_persistence.dirty,
     })
   end
-
-  return vim.deepcopy(updated.trails[target_name])
+  local renamed = vim.deepcopy(updated.trails[target_name])
+  hooks.emit_trail_rename(trail_context.current({
+    event = hook_events.TRAIL_RENAME,
+    project_root = project_root,
+    old_name = source_name,
+    new_name = target_name,
+    name = target_name,
+    trail_id = renamed and (renamed.id or renamed.trail_id) or nil,
+    items = renamed and renamed.items or {},
+  }))
+  return renamed
 end
 
 return M

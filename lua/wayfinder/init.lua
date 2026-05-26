@@ -10,6 +10,8 @@ local paths = require("wayfinder.util.paths")
 local scope = require("wayfinder.util.scope")
 local filter = require("wayfinder.util.filter")
 local explore_target = require("wayfinder.util.explore_target")
+local hooks = require("wayfinder.hooks")
+local trail_persistence = require("wayfinder.trail_persistence")
 local sources = {
   lsp = require("wayfinder.sources.lsp"),
   tests = require("wayfinder.sources.tests"),
@@ -17,6 +19,7 @@ local sources = {
 }
 
 local M = {}
+M.hooks = hooks
 
 local source_labels = {
   lsp = "LSP",
@@ -816,6 +819,34 @@ end
 
 function M.trail_save()
   actions.trail_save()
+end
+
+function M.trail_snapshot()
+  return trail.items()
+end
+
+function M.trail_save_named(name, opts)
+  return trail_persistence.save_current_as(name, opts)
+end
+
+function M.trail_load_named(name, opts)
+  return trail_persistence.load(name, opts)
+end
+
+function M.trail_delete_named(name, opts)
+  return trail_persistence.delete(name, opts)
+end
+
+function M.trail_rename_named(old_name, new_name, opts)
+  return trail_persistence.rename(old_name, new_name, opts)
+end
+
+function M.trail_active_name(opts)
+  return trail_persistence.active_name(opts)
+end
+
+function M.trail_project_root(opts)
+  return trail_persistence.project_root(opts)
 end
 
 function M.trail_new()
